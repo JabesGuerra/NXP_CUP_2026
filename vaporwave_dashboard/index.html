@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NXP_CUP // DASHBOARD</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --vw-green: #00ffaa;
+      --vw-green-glow: #00ffaa88;
+      --vw-cyan: #00f0ff;
+      --vw-cyan-light: #80d0ff;
+      --vw-dark-green: #003b22;
+      --vw-bg: #050d0a;
+      --vw-card-bg: #0c1813;
+      --vw-red-glow: rgba(255, 0, 85, 0.8);
+    }
+
+    body {
+      background-color: var(--vw-bg);
+      color: var(--vw-green);
+      font-family: 'Share Tech Mono', monospace;
+      background-image: 
+        linear-gradient(rgba(0, 255, 170, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 170, 0.05) 1px, transparent 1px);
+      background-size: 30px 30px;
+      overflow-x: hidden;
+    }
+
+    .font-arcade { font-family: 'VT323', monospace; }
+    .glow-text { text-shadow: 0 0 12px var(--vw-green-glow); }
+    .border-vapor { border: 2px solid var(--vw-green) !important; box-shadow: 0 0 12px var(--vw-green-glow); }
+
+    .text-cyan { color: var(--vw-cyan) !important; }
+    .text-cyan-light { color: var(--vw-cyan-light) !important; }
+
+    /* Parpadeo LIVE */
+    @keyframes blinkLive {
+      0%, 100% { opacity: 1; box-shadow: 0 0 16px var(--vw-red-glow); }
+      50% { opacity: 0.3; box-shadow: none; }
+    }
+    .live-blinking { animation: blinkLive 1s infinite ease-in-out; }
+
+    /* Contenedor del Leaderboard con Auto-Scroll Suave */
+    .leaderboard-container {
+      max-height: 70vh;
+      overflow-y: hidden;
+      scroll-behavior: smooth;
+    }
+
+    /* Modal / Overlay Oculto del Live Stream (Modo Fullscreen F1) */
+    .f1-stream-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 99999;
+      background-color: #000;
+      display: none;
+      clip-path: polygon(0 0, 0 0, 0 100%, 0% 100%);
+      transition: clip-path 0.8s cubic-bezier(0.77, 0, 0.175, 1);
+    }
+
+    /* Transición de Entrada (Entra de Izquierda a Derecha) */
+    .f1-stream-overlay.active {
+      display: block;
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    }
+
+    /* Transición de Salida (Sale barriendo hacia la Derecha) */
+    .f1-stream-overlay.exiting {
+      clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%);
+    }
+
+    /* Logo Overlay durante la transición */
+    .transition-logo-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 100000;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .transition-logo-overlay.show {
+      opacity: 1;
+    }
+
+    .logo-placeholder {
+      font-size: 5rem;
+      color: var(--vw-cyan);
+      text-shadow: 0 0 25px var(--vw-cyan);
+      animation: pulseLogo 0.8s infinite alternate;
+    }
+
+    @keyframes pulseLogo {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      100% { transform: scale(1.05); opacity: 1; }
+    }
+
+    /* Tarjetas del Leaderboard */
+    .f1-row {
+      background: var(--vw-card-bg);
+      border-left: 6px solid var(--vw-green);
+      transition: transform 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease;
+      transform: skewX(-4deg);
+    }
+
+    .f1-row:hover {
+      background-color: var(--vw-dark-green);
+      box-shadow: -6px 0 16px var(--vw-green-glow);
+    }
+
+    .f1-row-inner { transform: skewX(4deg); }
+
+    .pos-badge {
+      font-size: 2.3rem;
+      color: var(--vw-bg);
+      background-color: var(--vw-green);
+      min-width: 60px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .btn-vapor {
+      background-color: var(--vw-dark-green);
+      color: var(--vw-green);
+      border: 1px solid var(--vw-green);
+    }
+    .btn-vapor:hover { background-color: var(--vw-green); color: var(--vw-bg); }
+  </style>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+  <!-- Encabezado -->
+  <header class="p-3 border-bottom border-success border-opacity-50 bg-black">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+      <h1 class="h1 mb-0 glow-text font-arcade">
+        <i class="fa-solid fa-flag-checkered me-2"></i>NXP_CUP // LIVE_
+      </h1>
+      
+      <div class="d-flex gap-2 align-items-center">
+        <a href="/admin.html" target="_blank" class="btn btn-vapor font-arcade fs-4 px-3 py-1">
+          <i class="fa-solid fa-sliders me-2"></i>ABRIR CONTROL
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Leaderboard con Auto-Scroll -->
+  <main class="container max-w-lg mt-4 flex-grow-1">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-success">
+      <h2 class="font-arcade glow-text mb-0 display-4">LEADERBOARD</h2>
+      <span id="live-badge" class="badge bg-danger text-black font-arcade fs-4 px-3 py-2 live-blinking">● EN VIVO</span>
+    </div>
+
+    <div id="leaderboard-container" class="leaderboard-container">
+      <div id="leaderboard-list" class="d-flex flex-column gap-3 mb-5"></div>
+    </div>
+  </main>
+
+  <!-- Capa con el Logo durante la transición -->
+  <div id="logo-overlay" class="transition-logo-overlay">
+    <!-- Aquí puedes colocar un <img> con tu logo o mantener el ícono temporal -->
+    <div class="logo-placeholder font-arcade">
+      <i class="fa-solid fa-trophy me-2"></i>NXP_CUP
+    </div>
+  </div>
+
+  <!-- Fullscreen Container para la cámara del vehículo -->
+  <div id="stream-overlay" class="f1-stream-overlay">
+    <iframe id="server-frame" src="http://172.16.155.120:8650" style="width: 100vw; height: 100vh; border: 0;"></iframe>
+  </div>
+
+  <script>
+    const streamOverlay = document.getElementById('stream-overlay');
+    const logoOverlay = document.getElementById('logo-overlay');
+    const lbContainer = document.getElementById('leaderboard-container');
+    let isStreamActive = false;
+    let isTransitioning = false;
+    let scrollInterval = null;
+
+    // Lógica del Auto-Scroll automático cada 3 segundos
+    function startAutoScroll() {
+      if (scrollInterval) clearInterval(scrollInterval);
+
+      scrollInterval = setInterval(() => {
+        if (!lbContainer) return;
+        
+        const maxScroll = lbContainer.scrollHeight - lbContainer.clientHeight;
+        if (maxScroll <= 0) return;
+
+        // Si llegó al final, regresa arriba; de lo contrario, avanza 250px
+        if (lbContainer.scrollTop + 50 >= maxScroll) {
+          lbContainer.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          lbContainer.scrollBy({ top: 250, behavior: 'smooth' });
+        }
+      }, 3000);
+    }
+
+    // Transición de entrada y salida extendida con el Logo
+    function toggleStreamFullscreen() {
+      if (isTransitioning) return;
+      isTransitioning = true;
+      isStreamActive = !isStreamActive;
+
+      // Mostrar el Logo en el centro durante el cambio
+      logoOverlay.classList.add('show');
+
+      if (isStreamActive) {
+        streamOverlay.style.display = 'block';
+        setTimeout(() => {
+          streamOverlay.classList.remove('exiting');
+          streamOverlay.classList.add('active');
+        }, 50);
+
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        }
+
+        setTimeout(() => {
+          logoOverlay.classList.remove('show');
+          isTransitioning = false;
+        }, 800);
+
+      } else {
+        streamOverlay.classList.remove('active');
+        streamOverlay.classList.add('exiting');
+
+        if (document.exitFullscreen && document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+        }
+
+        setTimeout(() => {
+          streamOverlay.style.display = 'none';
+          streamOverlay.classList.remove('exiting');
+          logoOverlay.classList.remove('show');
+          isTransitioning = false;
+        }, 800);
+      }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement && isStreamActive && !isTransitioning) {
+        toggleStreamFullscreen();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        toggleStreamFullscreen();
+      }
+    });
+
+    // BroadcastChannel para recibir eventos remotos
+    let leaderboardData = [];
+    const channel = new BroadcastChannel('f1_vaporwave_channel');
+
+    channel.onmessage = (event) => {
+      if (event.data.type === 'TOGGLE_FULLSCREEN') {
+        toggleStreamFullscreen();
+      }
+      if (event.data.type === 'UPDATE_LEADERBOARD') {
+        leaderboardData = event.data.payload;
+        renderLeaderboard();
+      }
+      if (event.data.type === 'UPDATE_SERVER_URL') {
+        document.getElementById('server-frame').src = event.data.payload;
+      }
+      if (event.data.type === 'TOGGLE_LIVE_STATUS') {
+        const liveBadge = document.getElementById('live-badge');
+        if (event.data.payload) {
+          liveBadge.classList.remove('d-none');
+        } else {
+          liveBadge.classList.add('d-none');
+        }
+      }
+    };
+
+    function renderLeaderboard() {
+      const list = document.getElementById('leaderboard-list');
+      if (!leaderboardData || leaderboardData.length === 0) {
+        list.innerHTML = `<div class="text-center text-cyan fs-3 p-4">Sin datos registrados...</div>`;
+        return;
+      }
+
+      list.innerHTML = leaderboardData.map(item => `
+        <div class="f1-row p-3 rounded border-vapor">
+          <div class="f1-row-inner d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-3">
+              <span class="pos-badge font-arcade rounded">${item.pos}</span>
+              <div>
+                <div class="fw-bold fs-3 text-white">${item.driver} <span class="fs-4 text-cyan">(${item.name})</span></div>
+                <div class="text-uppercase text-cyan-light fw-bold fs-5">${item.team}</div>
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-4">
+              <span class="text-cyan font-monospace fw-bold fs-4">${item.gap}</span>
+              <span class="badge bg-black border border-success text-cyan fs-3 font-monospace px-3 py-2">${item.time}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      startAutoScroll();
+    }
+
+    renderLeaderboard();
+  </script>
+</body>
+</html>
