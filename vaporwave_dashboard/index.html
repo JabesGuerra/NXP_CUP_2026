@@ -19,6 +19,7 @@
       --vw-bg: #050d0a;
       --vw-card-bg: #0c1813;
       --vw-red-glow: rgba(255, 0, 85, 0.8);
+      --vw-yellow: #ffea00;
     }
 
     body {
@@ -38,6 +39,22 @@
 
     .text-cyan { color: var(--vw-cyan) !important; }
     .text-cyan-light { color: var(--vw-cyan-light) !important; }
+    .text-yellow { color: var(--vw-yellow) !important; text-shadow: 0 0 8px rgba(255, 234, 0, 0.6); }
+
+    /* Logos superiores */
+    .header-logos {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .logo-img {
+      height: 42px;
+      width: auto;
+      max-width: 75px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 4px var(--vw-green-glow));
+    }
 
     /* Parpadeo LIVE */
     @keyframes blinkLive {
@@ -46,14 +63,16 @@
     }
     .live-blinking { animation: blinkLive 1s infinite ease-in-out; }
 
-    /* Contenedor del Leaderboard con Auto-Scroll Suave */
+    /* Leaderboard con Auto-Scroll */
     .leaderboard-container {
-      max-height: 70vh;
+      max-height: 60vh;
       overflow-y: hidden;
+      overflow-x: hidden;
       scroll-behavior: smooth;
+      padding: 10px 15px;
     }
 
-    /* Modal / Overlay Oculto del Live Stream (Modo Fullscreen F1) */
+    /* Transición Fullscreen F1 */
     .f1-stream-overlay {
       position: fixed;
       top: 0;
@@ -67,18 +86,15 @@
       transition: clip-path 0.8s cubic-bezier(0.77, 0, 0.175, 1);
     }
 
-    /* Transición de Entrada (Entra de Izquierda a Derecha) */
     .f1-stream-overlay.active {
       display: block;
       clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
     }
 
-    /* Transición de Salida (Sale barriendo hacia la Derecha) */
     .f1-stream-overlay.exiting {
       clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%);
     }
 
-    /* Logo Overlay durante la transición */
     .transition-logo-overlay {
       position: absolute;
       top: 50%;
@@ -90,9 +106,7 @@
       transition: opacity 0.3s ease;
     }
 
-    .transition-logo-overlay.show {
-      opacity: 1;
-    }
+    .transition-logo-overlay.show { opacity: 1; }
 
     .logo-placeholder {
       font-size: 5rem;
@@ -106,12 +120,13 @@
       100% { transform: scale(1.05); opacity: 1; }
     }
 
-    /* Tarjetas del Leaderboard */
+    /* Estilo Angular del Leaderboard */
     .f1-row {
       background: var(--vw-card-bg);
       border-left: 6px solid var(--vw-green);
       transition: transform 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease;
-      transform: skewX(-4deg);
+      transform: skewX(-12deg);
+      margin: 0 10px;
     }
 
     .f1-row:hover {
@@ -119,7 +134,7 @@
       box-shadow: -6px 0 16px var(--vw-green-glow);
     }
 
-    .f1-row-inner { transform: skewX(4deg); }
+    .f1-row-inner { transform: skewX(12deg); }
 
     .pos-badge {
       font-size: 2.3rem;
@@ -136,18 +151,48 @@
       border: 1px solid var(--vw-green);
     }
     .btn-vapor:hover { background-color: var(--vw-green); color: var(--vw-bg); }
+
+    /* Animación de Barrido en Cascada */
+    @keyframes slideInCascade {
+      0% {
+        opacity: 0;
+        transform: skewX(-12deg) translateX(-100%);
+      }
+      100% {
+        opacity: 1;
+        transform: skewX(-12deg) translateX(0);
+      }
+    }
+
+    .cascade-item {
+      animation: slideInCascade 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+      opacity: 0;
+    }
   </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
 
-  <!-- Encabezado -->
+  <!-- Encabezado con Logos y Navegación -->
   <header class="p-3 border-bottom border-success border-opacity-50 bg-black">
     <div class="container-fluid d-flex justify-content-between align-items-center">
-      <h1 class="h1 mb-0 glow-text font-arcade">
-        <i class="fa-solid fa-flag-checkered me-2"></i>NXP_CUP // LIVE_
-      </h1>
+      <div class="d-flex align-items-center gap-4">
+        <h1 class="h1 mb-0 glow-text font-arcade me-2">
+          <i class="fa-solid fa-flag-checkered me-2"></i>NXP_CUP
+        </h1>
+
+        <div class="header-logos border-start border-success border-opacity-50 ps-3">
+          <img src="assets/logos/logo1.png" alt="L1" class="logo-img" onerror="this.style.display='none'">
+          <img src="assets/logos/logo2.png" alt="L2" class="logo-img" onerror="this.style.display='none'">
+          <img src="assets/logos/logo3.png" alt="L3" class="logo-img" onerror="this.style.display='none'">
+          <img src="assets/logos/logo4.png" alt="L4" class="logo-img" onerror="this.style.display='none'">
+          <img src="assets/logos/logo5.png" alt="L5" class="logo-img" onerror="this.style.display='none'">
+        </div>
+      </div>
       
       <div class="d-flex gap-2 align-items-center">
+        <a href="/rules.html" class="btn btn-vapor font-arcade fs-4 px-3 py-1">
+          <i class="fa-solid fa-book me-2"></i>REGLAS
+        </a>
         <a href="/admin.html" target="_blank" class="btn btn-vapor font-arcade fs-4 px-3 py-1">
           <i class="fa-solid fa-sliders me-2"></i>ABRIR CONTROL
         </a>
@@ -155,27 +200,36 @@
     </div>
   </header>
 
-  <!-- Leaderboard con Auto-Scroll -->
+  <!-- Leaderboard Main -->
   <main class="container max-w-lg mt-4 flex-grow-1">
-    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-success">
+    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom border-success">
       <h2 class="font-arcade glow-text mb-0 display-4">LEADERBOARD</h2>
       <span id="live-badge" class="badge bg-danger text-black font-arcade fs-4 px-3 py-2 live-blinking">● EN VIVO</span>
     </div>
 
+    <!-- Encabezado Indicativo de Columnas Global -->
+    <div class="d-flex justify-content-between align-items-center px-4 py-2 mb-3 bg-black rounded border border-success border-opacity-50 text-uppercase font-monospace fw-bold">
+      <span class="fs-4 text-white">PILOTO / ESCUDERÍA</span>
+      <div class="d-flex gap-5 me-2">
+        <span class="fs-3 text-cyan">FASTEST LAP</span>
+        <span class="fs-3 text-yellow">PUNTOS</span>
+      </div>
+    </div>
+
+    <!-- Contenedor Deslizable -->
     <div id="leaderboard-container" class="leaderboard-container">
       <div id="leaderboard-list" class="d-flex flex-column gap-3 mb-5"></div>
     </div>
   </main>
 
-  <!-- Capa con el Logo durante la transición -->
+  <!-- Logo de Transición -->
   <div id="logo-overlay" class="transition-logo-overlay">
-    <!-- Aquí puedes colocar un <img> con tu logo o mantener el ícono temporal -->
     <div class="logo-placeholder font-arcade">
       <i class="fa-solid fa-trophy me-2"></i>NXP_CUP
     </div>
   </div>
 
-  <!-- Fullscreen Container para la cámara del vehículo -->
+  <!-- Fullscreen Video Stream -->
   <div id="stream-overlay" class="f1-stream-overlay">
     <iframe id="server-frame" src="http://172.16.155.120:8650" style="width: 100vw; height: 100vh; border: 0;"></iframe>
   </div>
@@ -188,7 +242,9 @@
     let isTransitioning = false;
     let scrollInterval = null;
 
-    // Lógica del Auto-Scroll automático cada 3 segundos
+    const AUTO_SCROLL_SPEED_MS = 1500;
+    const AUTO_SCROLL_STEP_PX = 320;
+
     function startAutoScroll() {
       if (scrollInterval) clearInterval(scrollInterval);
 
@@ -198,22 +254,19 @@
         const maxScroll = lbContainer.scrollHeight - lbContainer.clientHeight;
         if (maxScroll <= 0) return;
 
-        // Si llegó al final, regresa arriba; de lo contrario, avanza 250px
         if (lbContainer.scrollTop + 50 >= maxScroll) {
           lbContainer.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
-          lbContainer.scrollBy({ top: 250, behavior: 'smooth' });
+          lbContainer.scrollBy({ top: AUTO_SCROLL_STEP_PX, behavior: 'smooth' });
         }
-      }, 3000);
+      }, AUTO_SCROLL_SPEED_MS);
     }
 
-    // Transición de entrada y salida extendida con el Logo
     function toggleStreamFullscreen() {
       if (isTransitioning) return;
       isTransitioning = true;
       isStreamActive = !isStreamActive;
 
-      // Mostrar el Logo en el centro durante el cambio
       logoOverlay.classList.add('show');
 
       if (isStreamActive) {
@@ -233,6 +286,9 @@
         }, 800);
 
       } else {
+        // Al comenzar la transición de salida, vaciamos el contenedor para evitar que los pilotos sean visibles previamente
+        document.getElementById('leaderboard-list').innerHTML = '';
+
         streamOverlay.classList.remove('active');
         streamOverlay.classList.add('exiting');
 
@@ -245,6 +301,9 @@
           streamOverlay.classList.remove('exiting');
           logoOverlay.classList.remove('show');
           isTransitioning = false;
+
+          // Renderizar con la animación en cascada únicamente cuando la pantalla se ha despejado por completo
+          renderLeaderboard(true);
         }, 800);
       }
     }
@@ -263,8 +322,12 @@
       }
     });
 
-    // BroadcastChannel para recibir eventos remotos
-    let leaderboardData = [];
+    let leaderboardData = JSON.parse(localStorage.getItem('nxp_state')) || [];
+    const savedConfig = JSON.parse(localStorage.getItem('nxp_config'));
+    if (savedConfig && savedConfig.ip) {
+      document.getElementById('server-frame').src = savedConfig.ip;
+    }
+
     const channel = new BroadcastChannel('f1_vaporwave_channel');
 
     channel.onmessage = (event) => {
@@ -273,6 +336,7 @@
       }
       if (event.data.type === 'UPDATE_LEADERBOARD') {
         leaderboardData = event.data.payload;
+        localStorage.setItem('nxp_state', JSON.stringify(leaderboardData));
         renderLeaderboard();
       }
       if (event.data.type === 'UPDATE_SERVER_URL') {
@@ -288,15 +352,15 @@
       }
     };
 
-    function renderLeaderboard() {
+    function renderLeaderboard(animateCascade = false) {
       const list = document.getElementById('leaderboard-list');
       if (!leaderboardData || leaderboardData.length === 0) {
         list.innerHTML = `<div class="text-center text-cyan fs-3 p-4">Sin datos registrados...</div>`;
         return;
       }
 
-      list.innerHTML = leaderboardData.map(item => `
-        <div class="f1-row p-3 rounded border-vapor">
+      list.innerHTML = leaderboardData.map((item, idx) => `
+        <div class="f1-row p-3 rounded border-vapor ${animateCascade ? 'cascade-item' : ''}" style="${animateCascade ? `animation-delay: ${idx * 0.12}s;` : ''}">
           <div class="f1-row-inner d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-3">
               <span class="pos-badge font-arcade rounded">${item.pos}</span>
@@ -305,9 +369,15 @@
                 <div class="text-uppercase text-cyan-light fw-bold fs-5">${item.team}</div>
               </div>
             </div>
+
             <div class="d-flex align-items-center gap-4">
-              <span class="text-cyan font-monospace fw-bold fs-4">${item.gap}</span>
-              <span class="badge bg-black border border-success text-cyan fs-3 font-monospace px-3 py-2">${item.time}</span>
+              <div class="text-end" style="min-width: 140px;">
+                <span class="badge bg-black border border-success text-cyan fs-3 font-monospace px-3 py-1">${item.time}</span>
+              </div>
+
+              <div class="text-end border-start border-success border-opacity-50 ps-3" style="min-width: 130px;">
+                <span class="fs-2 text-yellow font-monospace fw-bold">${item.totalPoints || 0} pts</span>
+              </div>
             </div>
           </div>
         </div>

@@ -11,13 +11,15 @@
     :root {
       --vw-cyan: #00f0ff;
       --vw-cyan-light: #80d0ff;
+      --vw-yellow: #ffea00;
     }
     body { background-color: #050d0a; color: #00ffaa; font-family: 'Share Tech Mono', monospace; }
     .btn-vapor { background-color: #003b22; color: #00ffaa; border: 1px solid #00ffaa; }
     .btn-vapor:hover { background-color: #00ffaa; color: #050d0a; }
-    .input-vapor { background-color: #000 !important; color: var(--vw-cyan) !important; border-color: #00f0ff55 !important; font-size: 1rem; }
+    .input-vapor { background-color: #000 !important; color: var(--vw-cyan) !important; border-color: #00f0ff55 !important; font-size: 0.95rem; }
     .text-cyan { color: var(--vw-cyan) !important; }
     .text-cyan-light { color: var(--vw-cyan-light) !important; }
+    .text-yellow { color: var(--vw-yellow) !important; }
   </style>
 </head>
 <body class="p-3">
@@ -26,7 +28,6 @@
     <i class="fa-solid fa-sliders me-2"></i>PANEL DE CONTROL NXP_CUP
   </h2>
 
-  <!-- IP Stream -->
   <div class="mb-3 p-3 border border-success rounded bg-dark">
     <label class="form-label text-cyan fw-bold fs-6 mb-1">IP LIVE STREAM (CÁMARA DEL VEHÍCULO)</label>
     <div class="input-group input-group-lg">
@@ -35,7 +36,6 @@
     </div>
   </div>
 
-  <!-- Switch Estado Live -->
   <div class="mb-3 p-3 border border-success rounded bg-dark d-flex justify-content-between align-items-center">
     <span class="fs-5 text-cyan-light fw-bold">ESTADO TRANSMISIÓN [LIVE]:</span>
     <div class="form-check form-switch mb-0">
@@ -44,8 +44,42 @@
     </div>
   </div>
 
+  <div class="mb-3 p-3 border border-success rounded bg-dark">
+    <label class="form-label text-cyan fw-bold fs-5 mb-2"><i class="fa-solid fa-calculator me-2"></i>CONFIGURACIÓN DE PUNTUACIÓN GLOBAL</label>
+    <div class="row g-2">
+      <div class="col-md-2 col-6">
+        <small class="text-white d-block">Pts / Vuelta:</small>
+        <input type="number" id="pts-lap" value="150" class="form-control input-vapor fw-bold">
+      </div>
+      <div class="col-md-2 col-6">
+        <small class="text-warning d-block">Pts / Gold Coin:</small>
+        <input type="number" id="pts-gold" value="30" class="form-control input-vapor fw-bold">
+      </div>
+      <div class="col-md-2 col-6">
+        <small class="text-danger d-block">Pts / Red Coin:</small>
+        <input type="number" id="pts-red" value="-10" class="form-control input-vapor fw-bold">
+      </div>
+      <div class="col-md-2 col-6">
+        <small class="text-info d-block">Pts / Blue Coin:</small>
+        <input type="number" id="pts-blue" value="10" class="form-control input-vapor fw-bold">
+      </div>
+      <div class="col-md-2 col-6">
+        <small class="text-warning d-block">Pts / Vuelta Incompleta:</small>
+        <input type="number" id="pts-inc-lap" value="75" class="form-control input-vapor fw-bold">
+      </div>
+      <div class="col-md-2 col-6">
+        <small class="text-cyan d-block">Umbral FL (s):</small>
+        <input type="number" step="0.1" id="threshold-fl" value="12.0" class="form-control input-vapor fw-bold">
+      </div>
+      <div class="col-md-12 col-12 mt-2">
+        <small class="text-cyan d-block">Bono por Umbral FL:</small>
+        <input type="number" id="bonus-fl" value="50" class="form-control input-vapor fw-bold">
+      </div>
+    </div>
+  </div>
+
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="font-arcade text-success fs-2 mb-0">PARTICIPANTES Y TIEMPOS</h4>
+    <h4 class="font-arcade text-success fs-2 mb-0">PARTICIPANTES, TIEMPOS Y PUNTOS</h4>
     <button id="btn-add-driver" class="btn btn-vapor fs-5 px-3">
       <i class="fa-solid fa-plus me-1"></i> AÑADIR PILOTO
     </button>
@@ -55,14 +89,13 @@
 
   <div class="d-grid gap-2">
     <button id="btn-sort-broadcast" class="btn btn-vapor font-arcade fs-2 py-2">
-      <i class="fa-solid fa-bolt me-2"></i>AUTOSORT Y TRANSMITIR
+      <i class="fa-solid fa-bolt me-2"></i>CALCULAR PUNTOS, AUTOSORT Y TRANSMITIR
     </button>
   </div>
 
   <script>
     const channel = new BroadcastChannel('f1_vaporwave_channel');
     
-    // Al presionar F en el panel de control, conmuta la pantalla completa en index.html
     document.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       if (e.key === 'f' || e.key === 'F') {
@@ -71,13 +104,31 @@
       }
     });
 
-    let state = [
-      { pos: 1, name: "VER", driver: "Max Verstappen", team: "Red Bull Racing", gap: "LÍDER", time: "1:28.140" },
-      { pos: 2, name: "NOR", driver: "Lando Norris", team: "McLaren", gap: "+1.240s", time: "1:29.380" },
-      { pos: 3, name: "LEC", driver: "Charles Leclerc", team: "Ferrari", gap: "+2.015s", time: "1:30.155" },
-      { pos: 4, name: "PIA", driver: "Oscar Piastri", team: "McLaren", gap: "+3.100s", time: "1:31.240" },
-      { pos: 5, name: "HAM", driver: "Lewis Hamilton", team: "Mercedes", gap: "+4.050s", time: "1:32.190" }
+    let config = JSON.parse(localStorage.getItem('nxp_config')) || {
+      ptsLap: 100, ptsGold: 25, ptsRed: -15, ptsBlue: 10, ptsIncLap: 50, thresholdFL: 90.0, bonusFL: 300, ip: "http://172.16.155.120:8650"
+    };
+
+    let state = JSON.parse(localStorage.getItem('nxp_state')) || [
+      { pos: 1, name: "VER", driver: "Max Verstappen", team: "Red Bull", gap: "LÍDER", time: "1:28.140", laps: 3, goldCoins: 2, redCoins: 0, blueCoins: 1, incLaps: 0, totalPoints: 0 },
+      { pos: 2, name: "NOR", driver: "Lando Norris", team: "McLaren", gap: "+1.240s", time: "1:29.380", laps: 3, goldCoins: 1, redCoins: 1, blueCoins: 2, incLaps: 0, totalPoints: 0 },
+      { pos: 3, name: "LEC", driver: "Charles Leclerc", team: "Ferrari", gap: "+2.015s", time: "1:30.155", laps: 2, goldCoins: 3, redCoins: 0, blueCoins: 0, incLaps: 1, totalPoints: 0 }
     ];
+
+    function saveContext() {
+      localStorage.setItem('nxp_state', JSON.stringify(state));
+      localStorage.setItem('nxp_config', JSON.stringify(config));
+    }
+
+    function initConfigInputs() {
+      document.getElementById('pts-lap').value = config.ptsLap;
+      document.getElementById('pts-gold').value = config.ptsGold;
+      document.getElementById('pts-red').value = config.ptsRed;
+      document.getElementById('pts-blue').value = config.ptsBlue;
+      document.getElementById('pts-inc-lap').value = config.ptsIncLap;
+      document.getElementById('threshold-fl').value = config.thresholdFL;
+      document.getElementById('bonus-fl').value = config.bonusFL;
+      document.getElementById('admin-ip').value = config.ip;
+    }
 
     function renderAdmin() {
       const container = document.getElementById('admin-list');
@@ -86,9 +137,10 @@
           <div class="d-flex align-items-center gap-2">
             <span class="badge bg-success text-black font-monospace fs-5">P${idx + 1}</span>
             <input type="text" value="${item.name}" placeholder="TAG" maxlength="3" 
-                   data-idx="${idx}" data-field="name" class="input-change form-control input-vapor text-uppercase fw-bold" style="width: 70px;">
+                   data-idx="${idx}" data-field="name" class="input-change form-control input-vapor text-uppercase fw-bold" style="width: 65px;">
             <input type="text" value="${item.driver}" placeholder="Piloto" 
                    data-idx="${idx}" data-field="driver" class="input-change form-control input-vapor flex-grow-1 fw-bold">
+            <span class="text-yellow font-monospace fw-bold fs-5 px-2">${item.totalPoints || 0} pts</span>
             <button onclick="removeDriver(${idx})" class="btn btn-outline-danger"><i class="fa-solid fa-trash fs-5"></i></button>
           </div>
           
@@ -96,9 +148,33 @@
             <input type="text" value="${item.team}" placeholder="Equipo" 
                    data-idx="${idx}" data-field="team" class="input-change form-control input-vapor flex-grow-1 text-cyan-light">
             <input type="text" value="${item.time}" placeholder="1:28.140" 
-                   data-idx="${idx}" data-field="time" class="input-change form-control input-vapor text-cyan-light fw-bold" style="width: 120px;">
+                   data-idx="${idx}" data-field="time" class="input-change form-control input-vapor text-cyan-light fw-bold" style="width: 110px;">
             <button onclick="move(${idx}, -1)" class="btn btn-outline-success"><i class="fa-solid fa-arrow-up fs-5"></i></button>
             <button onclick="move(${idx}, 1)" class="btn btn-outline-success"><i class="fa-solid fa-arrow-down fs-5"></i></button>
+          </div>
+
+          <div class="d-flex align-items-center gap-2 bg-black p-2 rounded border border-success border-opacity-25 flex-wrap">
+            <small class="text-cyan fw-bold">CANTIDADES:</small>
+            <div class="d-flex align-items-center gap-1">
+              <small class="text-white">Vueltas:</small>
+              <input type="number" value="${item.laps || 0}" data-idx="${idx}" data-field="laps" class="input-change form-control input-vapor p-1 text-center" style="width: 50px;">
+            </div>
+            <div class="d-flex align-items-center gap-1">
+              <small class="text-warning">V.Inc:</small>
+              <input type="number" value="${item.incLaps || 0}" data-idx="${idx}" data-field="incLaps" class="input-change form-control input-vapor p-1 text-center" style="width: 50px;">
+            </div>
+            <div class="d-flex align-items-center gap-1">
+              <small class="text-warning">Gold:</small>
+              <input type="number" value="${item.goldCoins || 0}" data-idx="${idx}" data-field="goldCoins" class="input-change form-control input-vapor p-1 text-center" style="width: 50px;">
+            </div>
+            <div class="d-flex align-items-center gap-1">
+              <small class="text-danger">Red:</small>
+              <input type="number" value="${item.redCoins || 0}" data-idx="${idx}" data-field="redCoins" class="input-change form-control input-vapor p-1 text-center" style="width: 50px;">
+            </div>
+            <div class="d-flex align-items-center gap-1">
+              <small class="text-info">Blue:</small>
+              <input type="number" value="${item.blueCoins || 0}" data-idx="${idx}" data-field="blueCoins" class="input-change form-control input-vapor p-1 text-center" style="width: 50px;">
+            </div>
           </div>
         </div>
       `).join('');
@@ -107,7 +183,8 @@
         input.addEventListener('input', (e) => {
           const idx = e.target.getAttribute('data-idx');
           const field = e.target.getAttribute('data-field');
-          state[idx][field] = e.target.value;
+          state[idx][field] = e.target.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value;
+          saveContext();
         });
       });
     }
@@ -122,8 +199,31 @@
       return parseFloat(cleanStr) || Infinity;
     }
 
-    function autoSortAndCalculateDeltas() {
-      state.sort((a, b) => parseTimeToSeconds(a.time) - parseTimeToSeconds(b.time));
+    function autoSortAndCalculatePoints() {
+      config.ptsLap = parseFloat(document.getElementById('pts-lap').value) || 0;
+      config.ptsGold = parseFloat(document.getElementById('pts-gold').value) || 0;
+      config.ptsRed = parseFloat(document.getElementById('pts-red').value) || 0;
+      config.ptsBlue = parseFloat(document.getElementById('pts-blue').value) || 0;
+      config.ptsIncLap = parseFloat(document.getElementById('pts-inc-lap').value) || 0;
+      config.thresholdFL = parseFloat(document.getElementById('threshold-fl').value) || Infinity;
+      config.bonusFL = parseFloat(document.getElementById('bonus-fl').value) || 0;
+
+      state.forEach((item) => {
+        let points = (item.laps * config.ptsLap) +
+                      ((item.incLaps || 0) * config.ptsIncLap) +
+                      (item.goldCoins * config.ptsGold) +
+                      (item.redCoins * config.ptsRed) +
+                      ((item.blueCoins || 0) * config.ptsBlue);
+        
+        const timeSec = parseTimeToSeconds(item.time);
+        if (timeSec <= config.thresholdFL) {
+          points += config.bonusFL;
+        }
+
+        item.totalPoints = points;
+      });
+
+      state.sort((a, b) => b.totalPoints - a.totalPoints);
       const leaderTimeSec = parseTimeToSeconds(state[0]?.time);
 
       state.forEach((item, index) => {
@@ -137,17 +237,20 @@
         }
       });
 
+      saveContext();
       renderAdmin();
     }
 
     document.getElementById('btn-add-driver').addEventListener('click', () => {
-      state.push({ pos: state.length + 1, name: "PIL", driver: "Nuevo Piloto", team: "Escudería", gap: "+0.000s", time: "1:35.000" });
+      state.push({ pos: state.length + 1, name: "PIL", driver: "Nuevo Piloto", team: "Escudería", gap: "+0.000s", time: "1:35.000", laps: 0, goldCoins: 0, redCoins: 0, blueCoins: 0, incLaps: 0, totalPoints: 0 });
+      saveContext();
       renderAdmin();
     });
 
     function removeDriver(index) {
       state.splice(index, 1);
       state.forEach((item, i) => item.pos = i + 1);
+      saveContext();
       renderAdmin();
     }
 
@@ -158,6 +261,7 @@
       state[index] = state[newIndex];
       state[newIndex] = temp;
       state.forEach((item, i) => item.pos = i + 1);
+      saveContext();
       renderAdmin();
     }
 
@@ -166,15 +270,17 @@
     });
 
     document.getElementById('btn-send-ip').addEventListener('click', () => {
-      const ip = document.getElementById('admin-ip').value;
-      channel.postMessage({ type: 'UPDATE_SERVER_URL', payload: ip });
+      config.ip = document.getElementById('admin-ip').value;
+      saveContext();
+      channel.postMessage({ type: 'UPDATE_SERVER_URL', payload: config.ip });
     });
 
     document.getElementById('btn-sort-broadcast').addEventListener('click', () => {
-      autoSortAndCalculateDeltas();
+      autoSortAndCalculatePoints();
       channel.postMessage({ type: 'UPDATE_LEADERBOARD', payload: state });
     });
 
+    initConfigInputs();
     renderAdmin();
   </script>
 </body>
