@@ -14,13 +14,13 @@ Sincronización: Comunicación entre ventanas utilizando BroadcastChannel y loca
 
 🛠️ Estructura del Proyecto
 Plaintext
-.
-├── index.html              # Pantalla principal del Leaderboard y Stream
-├── rules.html              # Vista con las reglas del torneo
-├── admin.html              # Panel de control del evento
-└── assets/
-    ├── coins/              # Iconos de monedas (moneda_amarilla.png, etc.)
-    └── logos/              # Logotipos de patrocinadores/escuderías
+
+        ├── index.html              # Pantalla principal del Leaderboard y Stream
+        ├── rules.html              # Vista con las reglas del torneo
+        ├── admin.html              # Panel de control del evento
+        └── assets/
+            ├── coins/              # Iconos de monedas (moneda_amarilla.png, etc.)
+            └── logos/              # Logotipos de patrocinadores/escuderías
 ⚙️ Reglas de Puntuación Defectuosas
 Límite de carrera: Máximo 5 vueltas.
 
